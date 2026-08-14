@@ -1,0 +1,16 @@
+{
+  "strategy": "naive_mm",
+  "symbol": "BTC",
+  "n_fills": 88,
+  "turnover_usd": 40379.36077000001,
+  "realized_pnl": 15.033625394609924,
+  "fees_paid": 6.056904115499999,
+  "funding_paid": -0.1959604794792475,
+  "starting_cash": 100000,
+  "final_equity": 99987.11885886344,
+  "total_return_pct": -0.012881141136555918,
+  "sharpe": -21.08679048347715,
+  "max_drawdown_pct": -0.03936712941118995,
+  "var_95": 0.5956659019167992,
+  "es_95": 1.4405740643058844
+}

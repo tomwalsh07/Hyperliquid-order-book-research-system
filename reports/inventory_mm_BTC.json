@@ -1,0 +1,16 @@
+{
+  "strategy": "inventory_mm",
+  "symbol": "BTC",
+  "n_fills": 81,
+  "turnover_usd": 40828.406275,
+  "realized_pnl": 17.92634499999958,
+  "fees_paid": 6.124260941249998,
+  "funding_paid": -0.09900928607928576,
+  "starting_cash": 100000,
+  "final_equity": 100005.4844608455,
+  "total_return_pct": 0.005484460845495143,
+  "sharpe": 12.724554392712134,
+  "max_drawdown_pct": -0.01863061757229195,
+  "var_95": 0.32566637237905527,
+  "es_95": 0.9469284320947613
+}

@@ -1,0 +1,87 @@
+# hlmicro configuration. Nothing here requires secrets — public market data only.
+
+symbols: ["BTC", "ETH", "SOL"]
+
+ingestion:
+  ws_url: "wss://api.hyperliquid.xyz/ws"
+  ping_interval_s: 20          # server closes idle connections after 60s
+  reconnect_backoff_base_s: 1.0
+  reconnect_backoff_max_s: 60.0
+  reconnect_jitter_s: 1.0
+  raw_dir: "data/raw"
+  normalized_dir: "data/processed"
+  l2_n_levels: 20
+  # Full price precision: do NOT set nSigFigs, it truncates price levels and
+  # corrupts imbalance/microprice math. See docs/api_notes.md.
+  gap_warn_threshold_s: 15.0
+  # Empirically, l2Book pushes land every ~2-5.5s per symbol in normal
+  # conditions (docs say "at least 0.5s between pushes", not "exactly"),
+  # not sub-second — a tight threshold here just spams false-positive
+  # warnings on ordinary cadence. 15s gives real margin above that.
+
+orderbook:
+  depth_levels: 20
+
+analytics:
+  imbalance:
+    depth_weighted_levels: [5, 10, 20]
+    # weighting scheme applied across levels 0..N-1, see docs/methodology.md
+    level_weighting: "linear_decay"
+  liquidity:
+    depth_window_bps: 10
+    rolling_window_s: 300
+    z_score_threshold: -2.5
+  slippage:
+    default_order_sizes_usd: [10000, 50000, 250000]
+
+fees:
+  # Hyperliquid base tier as of 2026-08-13 — confirm current tier
+  # in docs/api_notes.md before relying on it; NOT hardcoded into logic.
+  maker_bps: 1.5
+  taker_bps: 4.5
+
+funding:
+  settlement_interval_hours: 1
+  rate_cap_per_hour: 0.04
+
+strategies:
+  naive_mm:
+    half_spread_bps: 1.5
+    # NOTE: at BTC's ~$63.5k price with a $1 tick, a captured 20-level
+    # ladder only spans ~$20 (~3bps) of depth on each side. A half-spread
+    # much wider than that (the original 5bps ~ $32 ~ 32 ticks) quotes
+    # outside our own visibility window, so the fill simulator correctly
+    # never credits a fill there (no depth data => conservative no-fill).
+    # 1.5bps (~9-10 ticks) keeps us inside the visible ladder. Found via
+    # an empirical check against real collected data - see docs/methodology.md.
+    quote_size: 0.01
+    max_inventory: 0.5
+  inventory_mm:
+    # risk_aversion is calibrated against sigma in ABSOLUTE PRICE units
+    # (see strategies/inventory_mm.py), not the tiny relative/log-return
+    # units gamma is usually quoted in - a "textbook" gamma like 0.1 here
+    # would make risk_term = risk_aversion*sigma^2*decay_window_s explode
+    # to thousands of dollars (BTC's empirical sigma is ~$8/update over
+    # the collected data), quoting far outside the visible 20-level
+    # ladder. 0.0001 keeps risk_term to a few dollars, on the same order
+    # as base_half_spread_bps below. Recalibrate if sigma's scale changes
+    # materially (e.g. a much less volatile symbol). See docs/methodology.md.
+    risk_aversion: 0.0001
+    vol_lookback_s: 60
+    decay_window_s: 300         # replaces Avellaneda-Stoikov's fixed T
+    max_inventory: 0.5
+    quote_size: 0.01
+    base_half_spread_bps: 1.5   # same visible-depth constraint as naive_mm above
+
+backtest:
+  fill_heuristic:
+    min_trade_consumption_pct: 0.5   # credit a fill only if a print consumes
+                                       # >= this fraction of resting size at our price
+  starting_cash_usd: 100000
+
+research:
+  horizons_ms: [100, 500, 1000, 5000, 10000]
+  subsample_interval_ms: 250
+  train_fraction: 0.7
+  cost_model:
+    round_trip_half_spread_multiplier: 2
